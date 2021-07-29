@@ -1,0 +1,25 @@
+[Unit]
+Description=
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=on-failure
+RestartSec=5
+SyslogIdentifier=backend
+
+WorkingDirectory=/home/XXX/docker
+User=XXX
+Environment=COMPOSE_FILE=backend.yaml
+EnvironmentFile=/home/XXX/docker/.env
+EnvironmentFile=/home/XXX/docker/cloud.env
+
+ExecStartPre=-/bin/bash -c 'aws ecr get-login-password | docker login --password-stdin --username AWS ${ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com'
+ExecStartPre=-/bin/docker-compose kill
+ExecStartPre=/bin/docker-compose pull
+ExecStart=/bin/docker-compose up
+
+ExecStop=/bin/docker-compose down
+
+[Install]
+WantedBy=multi-user.target

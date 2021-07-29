@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  backend:
+    env_file:
+      - dynamic.env
+      - common.env
+      - database.env
+      - mail.env
+      - backend.env
+
+    image: "${IMAGE_URL}/<container-name>:${IMAGE_TAG}"
+
+    ports:
+      - '8443:8443'
+
+    environment:
+      SERVER_PORT: '8443'
+      AMAZON_STACKNAME: "${STACK}"
+      JAVA_TOOL_OPTIONS: >
+        -XX:OnError='kill -TERM %p'
+        -verbose:gc
+        -XX:+PrintGCDetails
+        -Dnetworkaddress.cache.ttl=20
+        -Dsun.net.client.defaultConnectTimeout=30000
+        -Dsun.net.client.defaultReadTimeout=590000
+
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: "${COMPOSE_PROJECT_NAME}-${STACK}"
+        awslogs-create-group: 'true'
+        awslogs-stream: "${COMPOSE_FILE}-${INSTANCE_ID}"
+
+    healthcheck:
+      test: 'curl --connect-timeout 3 --max-time 15 --fail -k https://localhost:8443/api/application-settings'
+
+# vim: expandtab:ts=4:sw=2
