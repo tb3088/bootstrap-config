@@ -1,0 +1,20 @@
+[ "${0##*/}" != "${BASH_SOURCE##*/}" ] || { >&2 echo -e "ERROR\tfile must be sourced ($0)"; return 2; }
+
+#NOTE 'cloud.env' filename assumed in systemd/*.service files
+cat > cloud.env << _EOF
+
+AWS_DEFAULT_REGION=${region:?}
+# Java API and others still allow/require
+# if set, AWS_REGION should override _DEFAULT_
+AWS_REGION=${region:?}
+
+ACCOUNT_ID=${account_id:?}
+STACK=${stack:?}
+INSTANCE_ID=${instance_id:?}
+
+NUM_CPU=`lscpu | awk '$1 ~ /^CPU\(s\)/ { print $2; }'`
+MEM_MB=`free -m | awk '$1 ~ /^Mem:/ { print $2; }'`
+_EOF
+
+
+# vim: expandtab:ts=4:sw=2

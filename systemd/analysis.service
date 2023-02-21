@@ -1,8 +1,8 @@
 [Unit]
-Description=BACKEND service
+Description=ANALYSIS service
 Requires=docker.service
 After=docker.service
-OnFailure=terminate.service
+#OnFailure=terminate.service
 
 [Service]
 Restart=always
@@ -12,19 +12,21 @@ StartLimitBurst=3
 StartLimitInterval=240
 # alternative to 'OnFailure' above
 # values: none, reboot, reboot-force, or reboot-immediate
-StartLimitAction=none
+StartLimitAction=reboot
 
-SyslogIdentifier=XXX-backend
+SyslogIdentifier=analysis
 WorkingDirectory=/home/XXX/docker
 User=XXX
-Environment=COMPOSE_FILE=backend.yaml
+Environment=COMPOSE_FILE=analysis.yaml
 EnvironmentFile=/home/XXX/docker/.env
 EnvironmentFile=/home/XXX/docker/cloud.env
-EnvironmentFile=-/home/XXX/docker/backend.docker-env
+EnvironmentFile=-/home/XXX/docker/analysis.docker-env
 
 ExecStartPre=-/bin/docker-compose kill
 ExecStartPre=/home/XXX/tools/ecr-login.sh
 ExecStartPre=/bin/docker-compose pull
+# launch delay to smooth scale-out
+ExecStartPre=/bin/bash -c 'sleep $((RANDOM % 20))'
 ExecStart=/bin/docker-compose up
 
 ExecStop=/bin/docker-compose down

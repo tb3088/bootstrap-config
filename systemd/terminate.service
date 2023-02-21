@@ -1,0 +1,11 @@
+[Unit]
+Description=XXX TERMINATE ec2
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/XXX/docker
+User=XXX
+
+ExecStart=/home/XXX/tools/terminate.sh
+ExecStop=/bin/true

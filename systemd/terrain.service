@@ -1,0 +1,45 @@
+[Unit]
+Description=XXX TERRAIN service
+Requires=docker.service
+After=docker.service
+OnFailure=terminate.service
+
+# Conditional (skip) or Assert (fail) prevents self-healing+checks via copy-maps.sh
+#AssertPathIsMountPoint=/home/XXX/docker/maps
+#AssertDirectoryNotEmpty=/home/XXX/docker/maps/nlcd
+#AssertFileNotEmpty=/home/XXX/docker/maps/profile_GDAL/ecomTerrainIndex
+
+[Service]
+TimeoutStartSec=70
+# NOTE - docker-compose is PATHOLOGICALLY stupid and returns 0 despite
+# container "exiting" with RC=137 so 'on-failure' condition is never met
+Restart=always
+RestartSec=5
+StartLimitBurst=3
+# SLI >= (RestartSec + JVM init (20s)) * SLBurst, else indefinite.
+StartLimitInterval=600
+# alternative to 'OnFailure' above
+# values: none, reboot, reboot-force, or reboot-immediate
+StartLimitAction=none
+
+SyslogIdentifier=XXX-terrain
+WorkingDirectory=/home/XXX/docker
+User=XXX
+Environment=COMPOSE_FILE=terrain.yaml
+EnvironmentFile=/home/XXX/docker/.env
+EnvironmentFile=/home/XXX/docker/cloud.env
+EnvironmentFile=-/home/XXX/docker/terrain.docker-env
+
+ExecStartPre=-/bin/docker-compose kill
+ExecStartPre=/home/XXX/tools/ecr-login.sh
+ExecStartPre=/bin/docker-compose pull
+# attach/repair map volume
+ExecStartPre=/home/XXX/tools/copy-maps.sh
+ExecStart=/bin/docker-compose up
+
+ExecStop=/bin/docker-compose down
+#ExecStopPost=
+
+[Install]
+WantedBy=multi-user.target
+

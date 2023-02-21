@@ -1,0 +1,84 @@
+[ "${0##*/}" != "${BASH_SOURCE##*/}" ] || { >&2 echo -e "ERROR\tfile must be sourced ($0)"; return 2; }
+
+#TODO reorganize SSM layout to use native property names
+# loop thru all parameters below TLD, for each 
+#    ${key//./_}=value($key)
+
+: ${ssm_parameter_path:?}
+
+#NOTE 'dynamic.env' filename assumed in systemd/*.service files
+cat > dynamic.env << _EOF
+
+COMSEARCH_SERVICES_URL="`aws.get ssm.parameter "$ssm_parameter_path/lb/services"`"
+COMSEARCH_PROXY_TERRAIN_BASEURL="`aws.get ssm.parameter "$ssm_parameter_path/lb/terrain"`"
+COMSEARCH_PROXY_ANALYSIS_BASEURL="`aws.get ssm.parameter "$ssm_parameter_path/lb/analysis"`"
+
+COMSEARCH_CDN_BUCKET_NAME="`aws.get ssm.parameter "$ssm_parameter_path/s3/cdn"`"
+COMSEARCH_CDN_EXPORT_BUCKET_NAME="`aws.get ssm.parameter "$ssm_parameter_path/s3/export"`"
+
+ANALYSIS_SQS_QUEUE="`aws.get ssm.parameter "$ssm_parameter_path/sqs/analysis"`"
+EXPRESS_ANALYSIS_SQS_QUEUE="`aws.get ssm.parameter "$ssm_parameter_path/sqs/analysis-express"`"
+FILETASK_SQS_QUEUE="`aws.get ssm.parameter "$ssm_parameter_path/sqs/filetasks"`"
+MAIL_SQS_QUEUE="`aws.get ssm.parameter "$ssm_parameter_path/sqs/mailtasks"`"
+EXPORT_DOCUMENT_SQS_QUEUE="`aws.get ssm.parameter "$ssm_parameter_path/sqs/export_document"`"
+PCN_RENEWAL_SQS_QUEUE="`aws.get ssm.parameter "$ssm_parameter_path/sqs/pcn-renewal"`"
+
+# SES API keys
+SPRING_MAIL_USERNAME="`aws.get ssm.parameter "$ssm_parameter_path/ses/$region/user"`"
+SPRING_MAIL_PASSWORD="`aws.get ssm.parameter "$ssm_parameter_path/ses/$region/password"`"
+SPRING_MAIL_HOST="`aws.get ssm.parameter "$ssm_parameter_path/lb/mail/host"`"
+SPRING_MAIL_PORT="`aws.get ssm.parameter "$ssm_parameter_path/lb/mail/port"`"
+# disabled since auth error (530) going direct to SES
+#SPRING_MAIL_HOST=`aws.get ssm.parameter "$ssm_parameter_path/ses/$region/host"`
+#SPRING_MAIL_PORT=`aws.get ssm.parameter "$ssm_parameter_path/ses/$region/port"`
+
+#legacy decryptor for Java-encoded passwords
+JASYPT_ENCRYPTOR_PASSWORD="`aws.get ssm.parameter "$ssm_parameter_path/jasypt_encryptor"`"
+
+JDBC_URL="`aws.get ssm.parameter "$ssm_parameter_path/db/XXX"`"
+JDBC_USER="`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user"`"
+JDBC_PASSWORD="`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user/$( aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user" )"`"
+
+JDBC_FCC_PASSWORD="`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user/fcc"`"
+
+#TODO new style - but comsearch-core/*PersistenceJPAConfig interferes
+# (2/8/23 mpatton) DO NOT USE till code fully fixed
+#SPRING_DATASOURCE_URL=`aws.get ssm.parameter "$ssm_parameter_path/db/XXX"`
+#SPRING_DATASOURCE_USERNAME=`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user"`
+#SPRING_DATASOURCE_PASSWORD=`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user/$( aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user" )"`
+#
+#SPRING_FCC_DATASOURCE_URL=`aws.get ssm.parameter "$ssm_parameter_path/db/XXX"`
+#SPRING_FCC_DATASOURCE_USERNAME=fcc
+#SPRING_FCC_DATASOURCE_PASSWORD=`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user/fcc"`
+
+SPRING_LEGACY_DATASOURCE_URL="`aws.get ssm.parameter "$ssm_parameter_path/db/legacy"`"
+SPRING_LEGACY_DATASOURCE_USERNAME="`aws.get ssm.parameter "$ssm_parameter_path/db/legacy/user"`"
+SPRING_LEGACY_DATASOURCE_PASSWORD="`aws.get ssm.parameter "$ssm_parameter_path/db/legacy/user/$( aws.get ssm.parameter "$ssm_parameter_path/db/legacy/user" )"`"
+
+LEGACY_C2I_HOST="`aws.get ssm.parameter "$ssm_parameter_path/legacy/c2i/host"`"
+LEGACY_C2I_PORT="`aws.get ssm.parameter "$ssm_parameter_path/legacy/c2i/port"`"
+
+_EOF
+
+
+# SSM sporatically returns empty values which is fatal
+( source dynamic.env
+
+  for v in COMSEARCH_SERVICES_URL COMSEARCH_PROXY_{TERRAIN,ANALYSIS}_BASEURL \
+      COMSEARCH_CDN{,_EXPORT}_BUCKET_NAME \
+      {ANALYSIS,FILETASK,MAIL,EXPORT_DOCUMENT,PCN_RENEWAL}_SQS_QUEUE \
+      JASYPT_ENCRYPTOR_PASSWORD JDBC_{URL,{,FCC_}PASSWORD} \
+      SPRING_LEGACY_DATASOURCE_{URL,PASSWORD} ; do
+#      SPRING{,_FCC,_LEGACY}_DATASOURCE_{URL,PASSWORD}
+
+    [ -n "${!v}" ] || { log.error "SSM returned blank ($v)"; break; }
+  done
+)
+
+
+cat > override.env << _EOF
+ANALYSIS_SQS_QUEUE=`aws.get ssm.parameter "$ssm_parameter_path/sqs/analysis-express"`
+_EOF
+
+
+# vim: expandtab:ts=4:sw=2
