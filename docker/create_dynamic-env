@@ -9,12 +9,12 @@
 #NOTE 'dynamic.env' filename assumed in systemd/*.service files
 cat > dynamic.env << _EOF
 
-COMSEARCH_SERVICES_URL="`aws.get ssm.parameter "$ssm_parameter_path/lb/services"`"
-COMSEARCH_PROXY_TERRAIN_BASEURL="`aws.get ssm.parameter "$ssm_parameter_path/lb/terrain"`"
-COMSEARCH_PROXY_ANALYSIS_BASEURL="`aws.get ssm.parameter "$ssm_parameter_path/lb/analysis"`"
+SERVICES_URL="`aws.get ssm.parameter "$ssm_parameter_path/lb/services"`"
+PROXY_TERRAIN_BASEURL="`aws.get ssm.parameter "$ssm_parameter_path/lb/terrain"`"
+PROXY_ANALYSIS_BASEURL="`aws.get ssm.parameter "$ssm_parameter_path/lb/analysis"`"
 
-COMSEARCH_CDN_BUCKET_NAME="`aws.get ssm.parameter "$ssm_parameter_path/s3/cdn"`"
-COMSEARCH_CDN_EXPORT_BUCKET_NAME="`aws.get ssm.parameter "$ssm_parameter_path/s3/export"`"
+CDN_BUCKET_NAME="`aws.get ssm.parameter "$ssm_parameter_path/s3/cdn"`"
+CDN_EXPORT_BUCKET_NAME="`aws.get ssm.parameter "$ssm_parameter_path/s3/export"`"
 
 ANALYSIS_SQS_QUEUE="`aws.get ssm.parameter "$ssm_parameter_path/sqs/analysis"`"
 EXPRESS_ANALYSIS_SQS_QUEUE="`aws.get ssm.parameter "$ssm_parameter_path/sqs/analysis-express"`"
@@ -41,7 +41,7 @@ JDBC_PASSWORD="`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user/$( aws.ge
 
 JDBC_FCC_PASSWORD="`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user/fcc"`"
 
-#TODO new style - but comsearch-core/*PersistenceJPAConfig interferes
+#TODO new style - but core/*PersistenceJPAConfig interferes
 # (2/8/23 mpatton) DO NOT USE till code fully fixed
 #SPRING_DATASOURCE_URL=`aws.get ssm.parameter "$ssm_parameter_path/db/XXX"`
 #SPRING_DATASOURCE_USERNAME=`aws.get ssm.parameter "$ssm_parameter_path/db/XXX/user"`
@@ -64,8 +64,8 @@ _EOF
 # SSM sporatically returns empty values which is fatal
 ( source dynamic.env
 
-  for v in COMSEARCH_SERVICES_URL COMSEARCH_PROXY_{TERRAIN,ANALYSIS}_BASEURL \
-      COMSEARCH_CDN{,_EXPORT}_BUCKET_NAME \
+  for v in SERVICES_URL PROXY_{TERRAIN,ANALYSIS}_BASEURL \
+      CDN{,_EXPORT}_BUCKET_NAME \
       {ANALYSIS,FILETASK,MAIL,EXPORT_DOCUMENT,PCN_RENEWAL}_SQS_QUEUE \
       JASYPT_ENCRYPTOR_PASSWORD JDBC_{URL,{,FCC_}PASSWORD} \
       SPRING_LEGACY_DATASOURCE_{URL,PASSWORD} ; do

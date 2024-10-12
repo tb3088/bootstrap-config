@@ -31,7 +31,7 @@ declare -A origin=(
   ['cache']=cache0
   ['mount_point']=/home/XXX/config/docker/maps
   ['path_prefix']=
-  ['bucket']=comsearch.maps
+  ['bucket']=maps
   ['bucket_prefix']=
 )
 
