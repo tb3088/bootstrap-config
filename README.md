@@ -16,11 +16,11 @@ The following tools are required:
 - AWS Cli (Python3, boto3)
 
 Depending on the role add:
-- Docker Engine, Compose](https://github.com/docker/compose)
+- Docker Engine, [Compose](https://github.com/docker/compose)
 - LVM tools
 - Puppet [facter](https://github.com/puppetlabs/facter)
 
-My experience with `login.gov` and GSA/18f group showed there needs to be a balance between pre-baked
+My experience with `login.gov` and `GSA/18f` group showed there needs to be a balance between pre-baked
 and stock AMIs. This example assumes an existing (if obsolete) checkout, and sufficient rights via `sudo`
 if not running as privileged.
 
